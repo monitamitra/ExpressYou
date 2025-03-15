@@ -70,6 +70,8 @@ dependencies {
 
     implementation("com.google.android.material:material:1.11.0")
 
+    implementation ("com.google.accompanist:accompanist-flowlayout:0.24.13-rc")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
