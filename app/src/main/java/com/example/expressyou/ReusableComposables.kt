@@ -1,6 +1,5 @@
 package com.example.expressyou
 
-import android.R.attr.shape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,28 +15,23 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -48,10 +42,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -64,7 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode.Companion.Screen
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -75,9 +69,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHost
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import coil.compose.AsyncImage
 import com.example.expressyou.ui.theme.ExpressYouTheme
-import okhttp3.Request
 
 
 // function to set up background linear gradient and app logo
@@ -116,23 +114,26 @@ fun BackgroundLayout(
 data class BottomNavigationItem(
     val title: String,
     val selectedIcon: ImageVector,
-    val unSelectedIcon: ImageVector
+    val unSelectedIcon: ImageVector,
+    val route: String
 )
 
 @Composable
 fun BottomNavBar(
-
+    navController: NavController
 ) {
     val items = listOf(
         BottomNavigationItem(
             title = "Home",
             selectedIcon = Icons.Filled.Home,
-            unSelectedIcon = Icons.Outlined.Home
+            unSelectedIcon = Icons.Outlined.Home,
+            route = CoffeeScreen.Home.name
         ),
         BottomNavigationItem(
             title = "Favorites",
             selectedIcon = Icons.Filled.Favorite,
-            unSelectedIcon = Icons.Outlined.FavoriteBorder
+            unSelectedIcon = Icons.Outlined.FavoriteBorder,
+            route = CoffeeScreen.Favorites.name
         )
     )
 
@@ -144,13 +145,14 @@ fun BottomNavBar(
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
             NavigationBar(
-                containerColor = Color(0xFFFFFFFF)
+                containerColor = Color(0xFFFFFFFF),
             ) {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         selected = selectedItemIndex == index,
                         onClick = {
                             selectedItemIndex = index
+                            navController.navigate(item.route)
                         },
                         label = {
                             Text(item.title,
@@ -369,7 +371,6 @@ fun HomeScreenUI(
     if (showModal) {
         GenerateCoffeeRecipeModal(
             coffeeRecipe = sampleRecipe,
-            sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             showBottomSheet = showModal,
             onDismissRequest = {showModal = false}
         )
@@ -381,7 +382,6 @@ fun HomeScreenUI(
 fun GenerateCoffeeRecipeModal(
     modifier: Modifier = Modifier,
     coffeeRecipe: CoffeeRecipe,
-    sheetShape: RoundedCornerShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     showBottomSheet: Boolean,
     onDismissRequest:  () -> Unit
 ) {
@@ -395,11 +395,11 @@ fun GenerateCoffeeRecipeModal(
         Font(R.font.poppins_semibold),
     )
 
-    val poppins_regular = FontFamily(
+    val poppinsRegular = FontFamily(
         Font(R.font.poppins_regular)
     )
 
-    val poppins_medium = FontFamily(
+    val poppinsMedium = FontFamily(
         Font(R.font.poppins_medium)
     )
 
@@ -412,9 +412,7 @@ fun GenerateCoffeeRecipeModal(
             containerColor = Color(0xFFF5E6CA)
         ) {
 
-            Box(
-
-            ) {
+            Box {
                 AsyncImage(
                     model = coffeeRecipe.imageUrl,
                     contentDescription = "Coffee Image",
@@ -466,14 +464,14 @@ fun GenerateCoffeeRecipeModal(
                             .padding(0.dp),
                     )
                     {
-                        options.forEachIndexed({index, option ->
+                        options.forEachIndexed{index, option ->
                             FilterChip(
                                 selected = index == selectedIndex,
                                 onClick = {
                                     selectedIndex = index
                                     isIngredients = index == 0
                                 },
-                                label = {Text(option, fontFamily = poppins_medium,
+                                label = {Text(option, fontFamily = poppinsMedium,
                                     fontSize = 14.sp,
                                     modifier = modifier.padding(vertical = 10.dp))},
                                 colors = FilterChipDefaults.filterChipColors(
@@ -484,7 +482,7 @@ fun GenerateCoffeeRecipeModal(
                                 ),
                                 border = BorderStroke(0.dp, Color.Transparent)
                             )
-                        })
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -492,7 +490,7 @@ fun GenerateCoffeeRecipeModal(
 
                     val itemCount = if (isIngredients) coffeeRecipe.ingredients.size else
                         coffeeRecipe.instructions.size
-                    Text("$itemCount items", fontFamily = poppins_regular, fontSize = 12.sp,
+                    Text("$itemCount items", fontFamily = poppinsRegular, fontSize = 12.sp,
                         color = Color(0xFF4B2E2E), modifier = modifier.padding(start = 10.dp))
 
 
@@ -518,13 +516,13 @@ fun GenerateCoffeeRecipeModal(
                                     Row(
                                         modifier = modifier.fillMaxWidth()
                                     ) {
-                                        Text(item.name, fontFamily = poppins_medium, fontSize = 14.sp,
+                                        Text(item.name, fontFamily = poppinsMedium, fontSize = 14.sp,
                                             color = Color(0xFF4B2E2E), modifier =
                                             modifier.weight(1f)
                                                 .fillMaxWidth()
                                                 .padding(start = 5.dp, bottom = 5.dp, top = 5.dp))
 
-                                        Text(item.amount, fontFamily = poppins_regular, fontSize = 12.sp,
+                                        Text(item.amount, fontFamily = poppinsRegular, fontSize = 12.sp,
                                             color = Color(0xFF4B2E2E), textAlign = TextAlign.End,
                                             modifier = modifier.padding(top = 5.dp, bottom = 5.dp,
                                                 end = 5.dp))
@@ -547,7 +545,7 @@ fun GenerateCoffeeRecipeModal(
                                     ),
                                     border = BorderStroke(1.dp, Color(0xFF4B2E2E))
                                 ) {
-                                    Text(item, fontFamily = poppins_regular, fontSize = 12.sp,
+                                    Text(item, fontFamily = poppinsRegular, fontSize = 12.sp,
                                         color = Color(0xFF4B2E2E), modifier = modifier.fillMaxWidth().
                                         padding(top = 5.dp, bottom = 5.dp, start = 5.dp),
                                         maxLines = Int.MAX_VALUE
@@ -559,33 +557,104 @@ fun GenerateCoffeeRecipeModal(
 
                     }
                 }
-
-
-
-
-
-
-
-
         }
 
     }
 }
 
+@Composable
+fun FavoritesScreen() {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val poppinsRegular = FontFamily(
+        Font(R.font.poppins_regular),
+    )
+
+    Column(
+        modifier = Modifier.padding(top = 110.dp)
+            .fillMaxHeight()
+    )
+    {
+    TextField(
+        value = searchQuery,
+        onValueChange = {searchQuery = it},
+        placeholder = {Text("Search Your Favorites", color = Color(0xFFD4A373),
+            fontFamily = poppinsRegular)},
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth()
+            .padding(start = 28.dp, end = 28.dp)
+            .border(1.dp, Color(0xFFD4A373), RoundedCornerShape(25.dp))
+            .align(Alignment.CenterHorizontally),
+        shape = RoundedCornerShape(25.dp),
+        leadingIcon = {
+            Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon",
+                tint = Color(0xFFD4A373),
+                modifier = Modifier.padding(start = 8.dp))
+        },
+        colors = TextFieldDefaults.colors(
+            unfocusedTextColor = Color(0xFFD4A373),
+            focusedTextColor = Color(0xFFD4A373),
+            focusedIndicatorColor = Color(0xFFD4A373),
+            unfocusedIndicatorColor = Color(0xFFD4A373)
+        )
+    )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
-fun DefaultHomeScreen() {
+fun FavoritesScreenPreview() {
     ExpressYouTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            BackgroundLayout(modifier = Modifier.fillMaxSize())
-            HomeScreenUI()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-            ) {
-                BottomNavBar()
+        Favorites()
+    }
+}
+
+@Composable
+fun Favorites() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        BackgroundLayout(modifier = Modifier.fillMaxSize())
+        FavoritesScreen()
+    }
+}
+
+@Composable
+fun Home() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        BackgroundLayout(modifier = Modifier.fillMaxSize())
+        HomeScreenUI()
+    }
+}
+
+enum class CoffeeScreen() {
+    Home,
+    Favorites
+}
+
+@Composable
+fun MainScreen() {
+    val navController = rememberNavController()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = CoffeeScreen.Home.name,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            composable(route = CoffeeScreen.Home.name) {
+                Home()
             }
+
+            composable(route = CoffeeScreen.Favorites.name) {
+                Favorites()
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            BottomNavBar(navController)
         }
     }
 }

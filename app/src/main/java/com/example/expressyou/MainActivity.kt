@@ -17,20 +17,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ExpressYouTheme {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    BackgroundLayout(modifier = Modifier.fillMaxSize())
-                    HomeScreenUI()
-
-
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                    ) {
-                        BottomNavBar()
-                    }
-                }
+                MainScreen()
             }
         }
     }
