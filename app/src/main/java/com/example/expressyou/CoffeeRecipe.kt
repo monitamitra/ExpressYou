@@ -5,5 +5,10 @@ data class CoffeeRecipe (
     val ingredients: List<Ingredient>,
     val instructions: List<String>,
     val imageUrl: String,
-    var isFavorite: Boolean = false
+    var isFavorite: Boolean = false,
+    val mood: String,
+    val weather: String,
+    val sweetness: String,
+    val milkType: String,
+    val dietaryRestrictions: List<String>
 )
