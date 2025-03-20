@@ -26,6 +26,20 @@ data class Choice(
     val message: Message
 )
 
+data class ImageRequest(
+    val model: String = "dall-e-2",
+    val prompt: String,
+    val size: String = "256x256"
+)
+
+data class ImageGenerationResponse(
+    val data: List<ImageData>
+)
+
+data class ImageData(
+    val url: String
+)
+
 interface OpenAIService {
 
     @POST("v1/chat/completions")
@@ -34,9 +48,11 @@ interface OpenAIService {
         @Body request: RecipeRequest
     ): Response<RecipeResponse>
 
-    suspend fun generateImage() {
 
-    }
-
+    @POST("v1/images/generations")
+    suspend fun generateImage(
+        @Header("Authorization") apiKey: String,
+        @Body request: ImageRequest
+    ): Response<ImageGenerationResponse>
 
 }

@@ -13,11 +13,16 @@ class RecipeViewModel : ViewModel() {
 
     private val openAIService = RetrofitInstance.openAIService
     private val _recipeResult = MutableLiveData<NetworkResponse<CoffeeRecipe>>()
-    val recipeResult : LiveData<NetworkResponse<CoffeeRecipe>> get() = _recipeResult
+    val recipeResult: LiveData<NetworkResponse<CoffeeRecipe>> get() = _recipeResult
+
+    private val _imageResult = MutableLiveData<NetworkResponse<String>>()
+    val imageResult: LiveData<NetworkResponse<String>> get() = _imageResult
 
 
-    fun generateCoffeeRecipe(mood: String, sweetness: String, milkType: String,
-                             dietaryRestrictions: String) {
+    fun generateCoffeeRecipe(
+        mood: String, sweetness: String, milkType: String,
+        dietaryRestrictions: String
+    ) {
 
         val prompt = """ Generate a coffee recipe based on the following preferences:
             - Mood: $mood
@@ -62,26 +67,35 @@ class RecipeViewModel : ViewModel() {
                     if (body != null && body.choices.isNotEmpty()) {
                         val jsonResponse = JSONObject(body.choices[0].message.content)
                         Log.i("RESPONSE: ", body.choices[0].message.content)
-                        //Log.i("IS JSON OBJECT NULL: ", jsonResponse.get("instructions").toString())
-                        val coffeeRecipe = parseRecipeResults(jsonResponse, mood, sweetness, dietaryRestrictions,
-                        milkType)
-                        //Log.i("COFFEE RECIPE CHECK: ", coffeeRecipe.instructions.toString())
-                        _recipeResult.value = NetworkResponse.Success(coffeeRecipe)
+                        val coffeeRecipe = parseRecipeResults(
+                            jsonResponse, mood, sweetness, dietaryRestrictions,
+                            milkType
+                        )
 
+                        var imageUrl = generateRecipeImage(coffeeRecipe.name)
+
+                        if (imageUrl.isEmpty()) {
+                            imageUrl = "https://www.browneyedbaker.com/wp-content/uploads/2021/06/iced-coffee-8-square.jpg"
+                        }
+
+                        val updatedRecipe = coffeeRecipe.copy(imageUrl = imageUrl)
+                        _recipeResult.value = NetworkResponse.Success(updatedRecipe)
                     }
                 } else {
                     _recipeResult.value = NetworkResponse.Error("Failed to generate recipe :(")
                 }
 
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 _recipeResult.value = NetworkResponse.Error("Failed to generate recipe :(")
             }
 
         }
     }
 
-    private fun parseRecipeResults(coffeeRecipeJSON: JSONObject, mood: String, sweetness: String, dietaryRestrictions: String,
-    milkType: String) : CoffeeRecipe {
+    private fun parseRecipeResults(
+        coffeeRecipeJSON: JSONObject, mood: String, sweetness: String, dietaryRestrictions: String,
+        milkType: String
+    ): CoffeeRecipe {
 
         Log.i("parseRecipeResults: ", "HERE :|")
 
@@ -101,8 +115,6 @@ class RecipeViewModel : ViewModel() {
             instructions.add(instructionsArray.getString(i))
         }
 
-       /* Log.i("parseRecipeResults", "Ingredients: ${ingredients.joinToString()}")
-        Log.i("parseRecipeResults", "Instructions: ${instructions.joinToString()}")*/
 
         return CoffeeRecipe(
             name = coffeeRecipeJSON.getString("name"),
@@ -115,11 +127,32 @@ class RecipeViewModel : ViewModel() {
             milkType = milkType,
             dietaryRestrictions = dietaryRestrictions
         )
-
-
     }
 
     fun generateSurpriseCoffeeRecipe(dietaryRestrictions: String) {
         Log.i("OMG you surprised me...", dietaryRestrictions)
     }
+
+    private suspend fun generateRecipeImage(coffeeName: String): String {
+        val apiKey = "Bearer ${BuildConfig.OPENAI_API_KEY}"
+        val request =
+            ImageRequest(prompt = "A high-quality, professional photograph of a beautifully crafted coffee drink in a cup, named '$coffeeName'. The coffee has rich textures, creamy froth, and is visually appealing. Shot in a cozy café setting.")
+
+        return try {
+            val response = openAIService.generateImage(apiKey, request)
+            if (response.isSuccessful) {
+                val imageUrl = response.body()?.data?.get(0)?.url ?: ""
+                Log.i("AI Image", "Generated Image URL: $imageUrl")
+                imageUrl
+            } else {
+                Log.i("AI Image", "FAILED TO GENERATE IMAGE :(")
+                ""
+            }
+
+        } catch(e: Exception) {
+            Log.i("AI Image", "Image generation error: ${e.message}")
+            ""
+        }
+    }
+
 }

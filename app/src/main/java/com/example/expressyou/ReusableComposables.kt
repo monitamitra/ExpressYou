@@ -362,10 +362,13 @@ fun HomeScreenUI(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .background(Color.Gray.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp),
+                    color = Color(0xFF4B2E2E)
+                )
             }
         }
         is NetworkResponse.Success -> {
