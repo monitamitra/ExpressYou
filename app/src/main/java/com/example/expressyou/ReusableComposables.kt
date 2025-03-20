@@ -1,5 +1,6 @@
 package com.example.expressyou
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,12 +34,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
@@ -46,9 +46,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,18 +56,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
@@ -170,34 +168,15 @@ fun BottomNavBar(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreenUI(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    recipeViewModel: RecipeViewModel
 ) {
     val poppins = FontFamily(
         Font(R.font.poppins_regular),
     )
 
-    val sampleRecipe = CoffeeRecipe(
-        name = "Vanilla Latte",
-        ingredients = listOf(
-            Ingredient("Espresso", "1 shot"),
-            Ingredient("Milk", "1 cup"),
-            Ingredient("Vanilla Syrup", "2 tbsp")
-        ),
-        instructions = listOf(
-            "Brew the espresso shot.",
-            "Steam the milk until frothy.",
-            "Add vanilla syrup to the espresso and mix.",
-            "Pour the steamed milk over the espresso.",
-            "Enjoy!"
-        ),
-        imageUrl = "https://www.yesmooretea.com/wp-content/uploads/2020/07/Tea-Leaves-Boba-Kit.jpg",
-        mood = "Calm",
-        weather = "Sunny",
-        sweetness = "Low",
-        milkType = "Whole",
-        dietaryRestrictions = listOf("Vegan")
-    )
-
+    val recipeResult = recipeViewModel.recipeResult.observeAsState()
+    var generatedRecipe: CoffeeRecipe? by remember { mutableStateOf(null) }
     var showModal by remember { mutableStateOf(false) }
 
     Column(
@@ -342,10 +321,14 @@ fun HomeScreenUI(
             horizontalArrangement = Arrangement.spacedBy(15.dp)
         ) {
             Button(
-                onClick = { showModal = true },
+                onClick = {
+                    showModal = true
+                    recipeViewModel.generateCoffeeRecipe(mood = mood, sweetness = selectedSweetness,
+                        milkType = selectedMilkType, dietaryRestrictions = dietaryRestrictions)
+                },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFD4A373), // Background color
-                    contentColor = Color.White // Text/Icon color
+                    containerColor = Color(0xFFD4A373),
+                    contentColor = Color.White
                 ),
 
                 shape = RoundedCornerShape(12.dp)
@@ -354,7 +337,10 @@ fun HomeScreenUI(
             }
 
             OutlinedButton(
-                onClick = { showModal = true },
+                onClick = {
+                    showModal = true
+                    recipeViewModel.generateSurpriseCoffeeRecipe(dietaryRestrictions = dietaryRestrictions)
+                },
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Color(0xFFD4A373),
                     containerColor = Color.White
@@ -367,199 +353,39 @@ fun HomeScreenUI(
 
         }
     }
-    if (showModal) {
-        GenerateCoffeeRecipeModal(
-            coffeeRecipe = sampleRecipe,
+
+    when(val res = recipeResult.value) {
+        is NetworkResponse.Error -> {
+            Text(text = res.message)
+        }
+        NetworkResponse.Loading -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is NetworkResponse.Success -> {
+            generatedRecipe = res.data
+            showModal = true
+            Log.d("HomeScreen", "Coffee recipe: ${res.data.name}")
+        }
+        null -> {}
+    }
+
+    if (showModal && generatedRecipe != null) {
+        GenerateRecipeModal(
+            coffeeRecipe = generatedRecipe!!,
             showBottomSheet = showModal,
-            onDismissRequest = {showModal = false}
+            onDismissRequest = { showModal = false }
         )
     }
+
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun GenerateCoffeeRecipeModal(
-    modifier: Modifier = Modifier,
-    coffeeRecipe: CoffeeRecipe,
-    showBottomSheet: Boolean,
-    onDismissRequest:  () -> Unit
-) {
-    //var showBottomSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
-    )
-
-
-    val poppinsSemiBold = FontFamily(
-        Font(R.font.poppins_semibold),
-    )
-
-    val poppinsRegular = FontFamily(
-        Font(R.font.poppins_regular)
-    )
-
-    val poppinsMedium = FontFamily(
-        Font(R.font.poppins_medium)
-    )
-
-    if (showBottomSheet) {
-        ModalBottomSheet(
-            modifier = modifier.fillMaxHeight()
-                .padding(horizontal = 14.dp),
-            onDismissRequest = onDismissRequest,
-            sheetState = sheetState,
-            containerColor = Color(0xFFF5E6CA)
-        ) {
-
-            Box {
-                AsyncImage(
-                    model = coffeeRecipe.imageUrl,
-                    contentDescription = "Coffee Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                )
-
-                var isFavorite by remember { mutableStateOf(coffeeRecipe.isFavorite) }
-                IconButton(
-                    onClick = {
-                        isFavorite = !isFavorite
-                        coffeeRecipe.isFavorite = isFavorite
-                    },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .background(color = Color.White)
-                        .clip(shape = RoundedCornerShape(40.dp))
-                ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Favorite else
-                            Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = Color(0xFFD4A373)
-                    )
-                }
-            }
-
-                Column(
-                    modifier = modifier
-                        .background(color = Color(0xFFF5E6CA))
-
-                ) {
-                    Text(coffeeRecipe.name, color = Color(0xFF4B2E2E),
-                        fontFamily = poppinsSemiBold, fontSize = 25.sp,
-                        modifier = modifier
-                            .padding(top = 40.dp, bottom = 20.dp, start = 10.dp)
-                            .align(Alignment.CenterHorizontally)
-                    )
-
-                    val options = listOf("Ingredients", "Instructions")
-                    var selectedIndex by remember { mutableIntStateOf(0) }
-                    var isIngredients by remember { mutableStateOf(true) }
-
-                    Row(
-                        modifier = modifier.align(Alignment.CenterHorizontally)
-                            .border(2.dp, Color(0xFF4B2E2E), shape = RoundedCornerShape(8.dp))
-                            .padding(0.dp),
-                    )
-                    {
-                        options.forEachIndexed{index, option ->
-                            FilterChip(
-                                selected = index == selectedIndex,
-                                onClick = {
-                                    selectedIndex = index
-                                    isIngredients = index == 0
-                                },
-                                label = {Text(option, fontFamily = poppinsMedium,
-                                    fontSize = 14.sp,
-                                    modifier = modifier.padding(vertical = 10.dp))},
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF4B2E2E),
-                                    selectedLabelColor = Color.White,
-                                    labelColor = Color(0xFF4B2E2E),
-                                    containerColor = Color(0xFFF5E6CA)
-                                ),
-                                border = BorderStroke(0.dp, Color.Transparent)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-
-                    val itemCount = if (isIngredients) coffeeRecipe.ingredients.size else
-                        coffeeRecipe.instructions.size
-                    Text("$itemCount items", fontFamily = poppinsRegular, fontSize = 12.sp,
-                        color = Color(0xFF4B2E2E), modifier = modifier.padding(start = 10.dp))
-
-
-                    LazyColumn (
-                        modifier = modifier
-                            .fillMaxWidth()
-                    ) {
-                        if (isIngredients) {
-                            items(coffeeRecipe.ingredients) { item ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .padding(start = 10.dp, bottom = 12.dp, top = 12.dp,
-                                            end = 10.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFF5E6CA)
-                                    ),
-                                    elevation = CardDefaults.cardElevation(
-                                        defaultElevation = 6.dp
-                                    ),
-                                    border = BorderStroke(1.dp, Color(0xFF4B2E2E))
-                                ) {
-                                    Row(
-                                        modifier = modifier.fillMaxWidth()
-                                    ) {
-                                        Text(item.name, fontFamily = poppinsMedium, fontSize = 14.sp,
-                                            color = Color(0xFF4B2E2E), modifier =
-                                            modifier.weight(1f)
-                                                .fillMaxWidth()
-                                                .padding(start = 5.dp, bottom = 5.dp, top = 5.dp))
-
-                                        Text(item.amount, fontFamily = poppinsRegular, fontSize = 12.sp,
-                                            color = Color(0xFF4B2E2E), textAlign = TextAlign.End,
-                                            modifier = modifier.padding(top = 5.dp, bottom = 5.dp,
-                                                end = 5.dp))
-                                    }
-
-                                }
-                            }
-                        } else {
-                            items(coffeeRecipe.instructions) { item ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .padding(start = 10.dp, bottom = 12.dp, top = 12.dp,
-                                            end = 10.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFF5E6CA)
-                                    ),
-                                    elevation = CardDefaults.cardElevation(
-                                        defaultElevation = 6.dp
-                                    ),
-                                    border = BorderStroke(1.dp, Color(0xFF4B2E2E))
-                                ) {
-                                    Text(item, fontFamily = poppinsRegular, fontSize = 12.sp,
-                                        color = Color(0xFF4B2E2E), modifier = modifier.fillMaxWidth().
-                                        padding(top = 5.dp, bottom = 5.dp, start = 5.dp),
-                                        maxLines = Int.MAX_VALUE
-                                    )
-                                }
-                            }
-                        }
-
-
-                    }
-                }
-        }
-
-    }
-}
 
 val sampleFavoriteRecipes = listOf(
     CoffeeRecipe(
@@ -581,7 +407,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Rainy",
         sweetness = "Medium",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = ""
     ),
     CoffeeRecipe(
         name = "Vanilla Honey Latte",
@@ -602,7 +428,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Rainy",
         sweetness = "Medium",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = "Dairy-Free"
     ),
     CoffeeRecipe(
         name = "Vanilla Honey Latte",
@@ -623,7 +449,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Rainy",
         sweetness = "Medium",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = ""
     ),
     CoffeeRecipe(
         name = "Vanilla Honey Latte",
@@ -644,7 +470,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Rainy",
         sweetness = "Medium",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = ""
     ),
     CoffeeRecipe(
         name = "Iced Caramel Macchiato",
@@ -666,7 +492,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Sunny",
         sweetness = "High",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = ""
     ),
     CoffeeRecipe(
         name = "Mocha Delight",
@@ -687,7 +513,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Cold",
         sweetness = "High",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = "Gluten-Free"
     ),
     CoffeeRecipe(
         name = "Cinnamon Spiced Cold Brew",
@@ -708,7 +534,7 @@ val sampleFavoriteRecipes = listOf(
         weather = "Breezy",
         sweetness = "Low",
         milkType = "Whole",
-        dietaryRestrictions = listOf("")
+        dietaryRestrictions = ""
     )
 )
 
@@ -863,7 +689,7 @@ fun RecipeCard(recipe: CoffeeRecipe) {
 
     if (showBottomSheet) {
         selectedRecipe?.let {
-            GenerateCoffeeRecipeModal(
+            FavoriteRecipeModal(
                 coffeeRecipe = it,
                 showBottomSheet = showBottomSheet,
                 onDismissRequest = { showBottomSheet = false }
@@ -889,10 +715,12 @@ fun Favorites() {
 }
 
 @Composable
-fun Home() {
+fun Home(
+    viewModel: RecipeViewModel
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         BackgroundLayout(modifier = Modifier.fillMaxSize())
-        HomeScreenUI()
+        HomeScreenUI(recipeViewModel = viewModel)
     }
 }
 
@@ -902,7 +730,7 @@ enum class CoffeeScreen() {
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(recipeViewModel: RecipeViewModel) {
     val navController = rememberNavController()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -912,7 +740,7 @@ fun MainScreen() {
             modifier = Modifier.fillMaxSize()
         ) {
             composable(route = CoffeeScreen.Home.name) {
-                Home()
+                Home(recipeViewModel)
             }
 
             composable(route = CoffeeScreen.Favorites.name) {
