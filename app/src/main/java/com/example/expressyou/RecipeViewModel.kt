@@ -24,7 +24,7 @@ class RecipeViewModel : ViewModel() {
         dietaryRestrictions: String, weatherOverview: String
     ) {
 
-       val selectedMilkType = if (milkType.isEmpty()) "No Milk" else milkType
+       val selectedMilkType = milkType.ifEmpty { "No Milk" }
 
         val prompt = """ Generate a coffee recipe based on the following preferences:
             - Mood: $mood
@@ -134,8 +134,108 @@ class RecipeViewModel : ViewModel() {
         )
     }
 
-    fun generateSurpriseCoffeeRecipe(dietaryRestrictions: String) {
-        Log.i("OMG you surprised me...", dietaryRestrictions)
+    fun generateSurpriseCoffeeRecipe(dietaryRestrictions: String, weatherOverview: String) {
+        val prompt = """ Generate a coffee recipe with a surprise mood, sweetness level, and 
+            milk type based on the dietary restrictions and weather:
+            - Dietary Restrictions: $dietaryRestrictions
+            - Weather: $weatherOverview
+
+            Format the response in JSON with the following structure:
+
+            {
+              "name": "Coffee Name",
+              "ingredients": [
+                {"name": "Ingredient 1", "amount": "Amount"},
+                {"name": "Ingredient 2", "amount": "Amount"}
+              ],
+              "instructions": [
+                "Step 1",
+                "Step 2",
+                "Step 3"
+              ], 
+              "weather": "Single-word weather descriptor based on the weather overview 
+              (e.g. Sunny, Rainy, Breezy)" , 
+              "mood": "Single-word mood of the recipe (e.g Enchanting, Cozy)", 
+              "sweetness": "sweetness level of the recipe -> unsweetened, low, medium, high", 
+              "milkType": "no milk, oat milk, almond milk, soy milk, whole milk, skim milk"
+            }
+
+            Ensure the response is concise, follows this JSON structure, and that the coffee recipe is unique and creative based on the given inputs.
+        """.trimIndent()
+
+        val apiKey = "Bearer ${BuildConfig.OPENAI_API_KEY}"
+        val request = RecipeRequest(
+            messages = listOf(
+                Message(role = "system", content = "You are a personal barista."),
+                Message(role = "user", content = prompt)
+            )
+        )
+
+        viewModelScope.launch {
+            _recipeResult.value = NetworkResponse.Loading
+
+            try {
+                val recipeResponse = openAIService.generateRecipe(apiKey, request)
+                if (recipeResponse.isSuccessful) {
+
+                    val body = recipeResponse.body()
+                    if (body != null && body.choices.isNotEmpty()) {
+                        val jsonResponse = JSONObject(body.choices[0].message.content)
+                        Log.i("RESPONSE: ", body.choices[0].message.content)
+                        val coffeeRecipe = parseSurpriseRecipeResults(
+                            jsonResponse, dietaryRestrictions)
+
+                        var imageUrl = generateRecipeImage(coffeeRecipe.name)
+
+                        if (imageUrl.isEmpty()) {
+                            imageUrl = "https://www.browneyedbaker.com/wp-content/uploads/2021/06/iced-coffee-8-square.jpg"
+                        }
+
+                        val updatedRecipe = coffeeRecipe.copy(imageUrl = imageUrl)
+                        _recipeResult.value = NetworkResponse.Success(updatedRecipe)
+                    }
+                } else {
+                    _recipeResult.value = NetworkResponse.Error("Failed to generate recipe :(")
+                }
+
+            } catch (e: Exception) {
+                _recipeResult.value = NetworkResponse.Error("Failed to generate recipe :(")
+            }
+
+        }
+    }
+
+    private fun parseSurpriseRecipeResults(
+        coffeeRecipeJSON: JSONObject, dietaryRestrictions: String,
+    ): CoffeeRecipe {
+
+        // ingredients
+        val ingredientsArray = coffeeRecipeJSON.getJSONArray("ingredients")
+        val ingredients = mutableListOf<Ingredient>()
+        for (i in 0 until ingredientsArray.length()) {
+            val item = ingredientsArray.getJSONObject(i)
+            ingredients.add(Ingredient(item.getString("name"), item.getString("amount")))
+        }
+
+        // instructions
+        val instructionsArray = coffeeRecipeJSON.getJSONArray("instructions")
+        val instructions = mutableListOf<String>()
+        for (i in 0 until instructionsArray.length()) {
+            instructions.add(instructionsArray.getString(i))
+        }
+
+
+        return CoffeeRecipe(
+            name = coffeeRecipeJSON.getString("name"),
+            ingredients = ingredients,
+            instructions = instructions,
+            imageUrl = "https://www.allrecipes.com/thmb/LgtetzzQWH3GMxFISSii84XEAB8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/258686-IcedCaramelMacchiato-ddmps-4x3-104704-2effb74f7d504b8aa5fbd52204d0e2e5.jpg",
+            mood = coffeeRecipeJSON.getString("mood"),
+            weather = coffeeRecipeJSON.getString("weather"),
+            sweetness = coffeeRecipeJSON.getString("sweetness"),
+            milkType = coffeeRecipeJSON.getString("milkType"),
+            dietaryRestrictions = dietaryRestrictions
+        )
     }
 
     private suspend fun generateRecipeImage(coffeeName: String): String {

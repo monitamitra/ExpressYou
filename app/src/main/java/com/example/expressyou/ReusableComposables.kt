@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,12 +61,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -188,6 +192,14 @@ fun HomeScreenUI(
         else -> "Unknown Weather"
     }
 
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(showModal) {
+        if (!showModal) {
+            focusManager.clearFocus()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -197,7 +209,7 @@ fun HomeScreenUI(
         var mood by rememberSaveable { mutableStateOf("") }
         var dietaryRestrictions by rememberSaveable { mutableStateOf("") }
         var selectedSweetness by rememberSaveable { mutableStateOf("") }
-        var selectedMilkType by rememberSaveable { mutableStateOf("Milk Type") }
+        var selectedMilkType by rememberSaveable { mutableStateOf("No Milk") }
 
 
         OutlinedTextField(
@@ -349,7 +361,8 @@ fun HomeScreenUI(
             OutlinedButton(
                 onClick = {
                     showModal = true
-                    recipeViewModel.generateSurpriseCoffeeRecipe(dietaryRestrictions = dietaryRestrictions)
+                    recipeViewModel.generateSurpriseCoffeeRecipe(dietaryRestrictions = dietaryRestrictions,
+                        weatherOverview = curWeatherSummary)
                 },
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Color(0xFFD4A373),
@@ -391,11 +404,25 @@ fun HomeScreenUI(
     }
 
     if (showModal && generatedRecipe != null) {
-        GenerateRecipeModal(
-            coffeeRecipe = generatedRecipe!!,
-            showBottomSheet = showModal,
-            onDismissRequest = { showModal = false }
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(1f)
+        ) {
+            GenerateRecipeModal(
+                coffeeRecipe = generatedRecipe!!,
+                showBottomSheet = showModal,
+                onDismissRequest = { showModal = false }
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(16.dp))
+                    .clickable(onClick = { showModal = false })
+                    .zIndex(1f)
+            )
+        }
     }
 
 }
