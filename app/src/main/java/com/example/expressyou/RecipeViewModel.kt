@@ -21,14 +21,17 @@ class RecipeViewModel : ViewModel() {
 
     fun generateCoffeeRecipe(
         mood: String, sweetness: String, milkType: String,
-        dietaryRestrictions: String
+        dietaryRestrictions: String, weatherOverview: String
     ) {
+
+       val selectedMilkType = if (milkType.isEmpty()) "No Milk" else milkType
 
         val prompt = """ Generate a coffee recipe based on the following preferences:
             - Mood: $mood
             - Sweetness Level: $sweetness
-            - Milk Type: $milkType
+            - Milk Type: $selectedMilkType
             - Dietary Restrictions: $dietaryRestrictions
+            - Weather: $weatherOverview
 
             Format the response in JSON with the following structure:
 
@@ -42,7 +45,9 @@ class RecipeViewModel : ViewModel() {
                 "Step 1",
                 "Step 2",
                 "Step 3"
-              ]
+              ], 
+              "weather": "Single-word weather descriptor based on the weather overview 
+              (e.g. Sunny, Rainy, Breezy)" 
             }
 
             Ensure the response is concise, follows this JSON structure, and that the coffee recipe is unique and creative based on the given inputs.
@@ -69,7 +74,7 @@ class RecipeViewModel : ViewModel() {
                         Log.i("RESPONSE: ", body.choices[0].message.content)
                         val coffeeRecipe = parseRecipeResults(
                             jsonResponse, mood, sweetness, dietaryRestrictions,
-                            milkType
+                            selectedMilkType
                         )
 
                         var imageUrl = generateRecipeImage(coffeeRecipe.name)
@@ -122,7 +127,7 @@ class RecipeViewModel : ViewModel() {
             instructions = instructions,
             imageUrl = "https://www.allrecipes.com/thmb/LgtetzzQWH3GMxFISSii84XEAB8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/258686-IcedCaramelMacchiato-ddmps-4x3-104704-2effb74f7d504b8aa5fbd52204d0e2e5.jpg",
             mood = mood,
-            weather = "Sunny",
+            weather = coffeeRecipeJSON.getString("weather"),
             sweetness = sweetness,
             milkType = milkType,
             dietaryRestrictions = dietaryRestrictions

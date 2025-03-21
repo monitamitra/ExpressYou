@@ -169,15 +169,24 @@ fun BottomNavBar(
 @Composable
 fun HomeScreenUI(
     modifier: Modifier = Modifier,
-    recipeViewModel: RecipeViewModel
+    recipeViewModel: RecipeViewModel,
+    weatherViewModel: WeatherViewModel
 ) {
     val poppins = FontFamily(
         Font(R.font.poppins_regular),
     )
 
     val recipeResult = recipeViewModel.recipeResult.observeAsState()
+    val weatherState by weatherViewModel.weatherOverview.observeAsState()
     var generatedRecipe: CoffeeRecipe? by remember { mutableStateOf(null) }
     var showModal by remember { mutableStateOf(false) }
+
+    val curWeatherSummary = when (weatherState) {
+        is NetworkResponse.Success -> (weatherState as NetworkResponse.Success<String>).data
+        is NetworkResponse.Error -> "Unknown Weather"
+        is NetworkResponse.Loading -> "Fetching Weather..."
+        else -> "Unknown Weather"
+    }
 
     Column(
         modifier = Modifier
@@ -324,7 +333,8 @@ fun HomeScreenUI(
                 onClick = {
                     showModal = true
                     recipeViewModel.generateCoffeeRecipe(mood = mood, sweetness = selectedSweetness,
-                        milkType = selectedMilkType, dietaryRestrictions = dietaryRestrictions)
+                        milkType = selectedMilkType, dietaryRestrictions = dietaryRestrictions,
+                        weatherOverview = curWeatherSummary)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFD4A373),
@@ -366,8 +376,9 @@ fun HomeScreenUI(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(64.dp),
-                    color = Color(0xFF4B2E2E)
+                    modifier = Modifier.size(80.dp),
+                    color = Color(0xFF4B2E2E),
+                    strokeWidth = 10.dp
                 )
             }
         }
@@ -719,11 +730,12 @@ fun Favorites() {
 
 @Composable
 fun Home(
-    viewModel: RecipeViewModel
+    recipeViewModel: RecipeViewModel,
+    weatherViewModel: WeatherViewModel
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         BackgroundLayout(modifier = Modifier.fillMaxSize())
-        HomeScreenUI(recipeViewModel = viewModel)
+        HomeScreenUI(recipeViewModel = recipeViewModel, weatherViewModel = weatherViewModel)
     }
 }
 
@@ -733,7 +745,7 @@ enum class CoffeeScreen() {
 }
 
 @Composable
-fun MainScreen(recipeViewModel: RecipeViewModel) {
+fun MainScreen(recipeViewModel: RecipeViewModel, weatherViewModel: WeatherViewModel) {
     val navController = rememberNavController()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -743,7 +755,7 @@ fun MainScreen(recipeViewModel: RecipeViewModel) {
             modifier = Modifier.fillMaxSize()
         ) {
             composable(route = CoffeeScreen.Home.name) {
-                Home(recipeViewModel)
+                Home(recipeViewModel, weatherViewModel)
             }
 
             composable(route = CoffeeScreen.Favorites.name) {

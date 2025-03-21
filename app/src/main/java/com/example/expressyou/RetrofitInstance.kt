@@ -4,15 +4,27 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-    private const val BASEURL = "https://api.openai.com/"
+    private const val OPENAIBASEURL = "https://api.openai.com/"
 
-    private fun getInstance(): Retrofit {
+    private fun getOPENAIInstance(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASEURL)
+            .baseUrl(OPENAIBASEURL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    val openAIService : OpenAIService = getInstance().create(OpenAIService::class.java)
+    val openAIService : OpenAIService = getOPENAIInstance().create(OpenAIService::class.java)
+
+
+    private const val WEATHERBASEURL = "https://api.openweathermap.org/"
+
+    private fun getWeatherInstance() : Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(WEATHERBASEURL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    val weatherService : WeatherService = getWeatherInstance().create(WeatherService::class.java)
 
 }
