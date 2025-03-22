@@ -6,7 +6,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
 
 class RecipeViewModel : ViewModel() {
@@ -17,6 +21,10 @@ class RecipeViewModel : ViewModel() {
 
     private val _imageResult = MutableLiveData<NetworkResponse<String>>()
     val imageResult: LiveData<NetworkResponse<String>> get() = _imageResult
+
+    private val db = FirebaseFirestore.getInstance()
+    private val _favoriteRecipes = MutableStateFlow<List<CoffeeRecipe>>(emptyList())
+    val favoriteRecipes: StateFlow<List<CoffeeRecipe>> = _favoriteRecipes
 
 
     fun generateCoffeeRecipe(
@@ -258,6 +266,90 @@ class RecipeViewModel : ViewModel() {
             Log.i("AI Image", "Image generation error: ${e.message}")
             ""
         }
+    }
+
+    fun fetchFavoriteRecipes() {
+
+        db.collection("favorites")
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    Log.w("Favorites", "Error getting documents.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    val recipesList = mutableListOf<CoffeeRecipe>()
+                    for (doc in snapshots.documents) {
+                        val recipeMap = doc.data ?: continue
+
+                        val recipe = CoffeeRecipe(
+                            name = recipeMap["name"] as String? ?: "",
+
+                            ingredients = (recipeMap["ingredients"] as? List<*>)
+                                ?.filterIsInstance<Map<String, Any>>()
+                                ?.map {
+                                    Ingredient(
+                                        name = it["name"] as? String ?: "",
+                                        amount = it["amount"] as? String ?: ""
+                                    )
+                                } ?: emptyList(),
+
+                            instructions = (recipeMap["instructions"] as? List<*>)
+                                ?.filterIsInstance<String>() ?: emptyList(),
+
+                            imageUrl = recipeMap["imageUrl"] as? String ?: "",
+                            isFavorite = recipeMap["isFavorite"] as? Boolean ?: false,
+                            mood = recipeMap["mood"] as? String ?: "",
+                            weather = recipeMap["weather"] as? String ?: "",
+                            sweetness = recipeMap["sweetness"] as? String ?: "",
+                            milkType = recipeMap["milkType"] as? String ?: "",
+                            dietaryRestrictions = recipeMap["dietaryRestrictions"] as? String ?: ""
+                        )
+                        recipesList.add(recipe)
+                    }
+                    _favoriteRecipes.value = recipesList
+                }
+            }
+    }
+
+    fun saveRecipeToFavorites(recipe: CoffeeRecipe) {
+        val recipeMap = mapOf(
+            "name" to recipe.name,
+            "ingredients" to recipe.ingredients.map {
+                mapOf("name" to it.name, "amount" to it.amount)
+            },
+            "instructions" to recipe.instructions,
+            "imageUrl" to recipe.imageUrl,
+            "isFavorite" to recipe.isFavorite,
+            "mood" to recipe.mood,
+            "weather" to recipe.weather,
+            "sweetness" to recipe.sweetness,
+            "milkType" to recipe.milkType,
+            "dietaryRestrictions" to recipe.dietaryRestrictions
+        )
+
+        db.collection("favorites")
+            .add(recipeMap)
+            .addOnSuccessListener {
+                fetchFavoriteRecipes()
+                Log.d("Favorites", "Recipe saved successfully!")
+            }
+            .addOnFailureListener { e ->
+                Log.w("Favorites", "Error saving recipe", e)
+            }
+    }
+
+    fun removeRecipeFromFavorites(recipe: CoffeeRecipe) {
+        db.collection("favorites").whereEqualTo("name", recipe.name)
+            .get().addOnSuccessListener { docs ->
+                for (doc in docs) {
+                    db.collection("favorites").document(doc.id).delete()
+                }
+                fetchFavoriteRecipes()
+            }
+            .addOnFailureListener { e ->
+                Log.e("Favorites", "Error removing favorite", e)
+            }
     }
 
 }

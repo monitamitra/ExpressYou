@@ -49,6 +49,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -412,6 +414,7 @@ fun HomeScreenUI(
             GenerateRecipeModal(
                 coffeeRecipe = generatedRecipe!!,
                 showBottomSheet = showModal,
+                recipeViewModel = recipeViewModel,
                 onDismissRequest = { showModal = false }
             )
 
@@ -428,164 +431,17 @@ fun HomeScreenUI(
 }
 
 
-val sampleFavoriteRecipes = listOf(
-    CoffeeRecipe(
-        name = "Vanilla Honey Latte",
-        ingredients = listOf(
-            Ingredient("Espresso", "40 mg"),
-            Ingredient("Steamed milk", "1/2 cup"),
-            Ingredient("Vanilla syrup", "1 tsp"),
-            Ingredient("Honey", "1/2 tsp"),
-        ),
-        instructions = listOf(
-            "Brew a shot of espresso.",
-            "Steam milk and mix with vanilla syrup and honey.",
-            "Pour over espresso and stir well."
-        ),
-        imageUrl = "https://www.yesmooretea.com/wp-content/uploads/2020/07/Tea-Leaves-Boba-Kit.jpg",
-        isFavorite = true,
-        mood = "Cozy",
-        weather = "Rainy",
-        sweetness = "Medium",
-        milkType = "Whole",
-        dietaryRestrictions = ""
-    ),
-    CoffeeRecipe(
-        name = "Vanilla Honey Latte",
-        ingredients = listOf(
-            Ingredient("Espresso", "40 mg"),
-            Ingredient("Steamed milk", "1/2 cup"),
-            Ingredient("Vanilla syrup", "1 tsp"),
-            Ingredient("Honey", "1/2 tsp"),
-        ),
-        instructions = listOf(
-            "Brew a shot of espresso.",
-            "Steam milk and mix with vanilla syrup and honey.",
-            "Pour over espresso and stir well."
-        ),
-        imageUrl = "https://www.yesmooretea.com/wp-content/uploads/2020/07/Tea-Leaves-Boba-Kit.jpg",
-        isFavorite = true,
-        mood = "Cozy",
-        weather = "Rainy",
-        sweetness = "Medium",
-        milkType = "Whole",
-        dietaryRestrictions = "Dairy-Free"
-    ),
-    CoffeeRecipe(
-        name = "Vanilla Honey Latte",
-        ingredients = listOf(
-            Ingredient("Espresso", "40 mg"),
-            Ingredient("Steamed milk", "1/2 cup"),
-            Ingredient("Vanilla syrup", "1 tsp"),
-            Ingredient("Honey", "1/2 tsp"),
-        ),
-        instructions = listOf(
-            "Brew a shot of espresso.",
-            "Steam milk and mix with vanilla syrup and honey.",
-            "Pour over espresso and stir well."
-        ),
-        imageUrl = "https://www.yesmooretea.com/wp-content/uploads/2020/07/Tea-Leaves-Boba-Kit.jpg",
-        isFavorite = true,
-        mood = "Cozy",
-        weather = "Rainy",
-        sweetness = "Medium",
-        milkType = "Whole",
-        dietaryRestrictions = ""
-    ),
-    CoffeeRecipe(
-        name = "Vanilla Honey Latte",
-        ingredients = listOf(
-            Ingredient("Espresso", "40 mg"),
-            Ingredient("Steamed milk", "1/2 cup"),
-            Ingredient("Vanilla syrup", "1 tsp"),
-            Ingredient("Honey", "1/2 tsp"),
-        ),
-        instructions = listOf(
-            "Brew a shot of espresso.",
-            "Steam milk and mix with vanilla syrup and honey.",
-            "Pour over espresso and stir well."
-        ),
-        imageUrl = "https://www.yesmooretea.com/wp-content/uploads/2020/07/Tea-Leaves-Boba-Kit.jpg",
-        isFavorite = true,
-        mood = "Cozy",
-        weather = "Rainy",
-        sweetness = "Medium",
-        milkType = "Whole",
-        dietaryRestrictions = ""
-    ),
-    CoffeeRecipe(
-        name = "Iced Caramel Macchiato",
-        ingredients = listOf(
-            Ingredient("Espresso", "40 mg"),
-            Ingredient("Milk", "1/2 cup"),
-            Ingredient("Vanilla syrup", "1 tsp"),
-            Ingredient("Caramel drizzle", "1/2 tsp"),
-            Ingredient("Ice", "5-6 cubes")
-        ),
-        instructions = listOf(
-            "Add vanilla syrup to a glass with ice and milk.",
-            "Pour brewed espresso over the top.",
-            "Drizzle caramel sauce on top and enjoy."
-        ),
-        imageUrl = "https://cdn.vox-cdn.com/thumbor/6kLvmWfhU4h64EhC0S6tsn714fI=/0x0:4032x3024/1200x900/filters:focal(1694x1190:2338x1834)/cdn.vox-cdn.com/uploads/chorus_image/image/59740845/IMG_1503.42.jpg",
-        isFavorite = true,
-        mood = "Energized",
-        weather = "Sunny",
-        sweetness = "High",
-        milkType = "Whole",
-        dietaryRestrictions = ""
-    ),
-    CoffeeRecipe(
-        name = "Mocha Delight",
-        ingredients = listOf(
-            Ingredient("Espresso", "40 mg"),
-            Ingredient("Steamed milk", "1/2 cup"),
-            Ingredient("Chocolate syrup", "2 tsp"),
-            Ingredient("Whipped cream", "1 pump")
-        ),
-        instructions = listOf(
-            "Brew a shot of espresso.",
-            "Mix espresso with steamed milk and chocolate syrup.",
-            "Top with whipped cream and enjoy."
-        ),
-        imageUrl = "https://cdn.vox-cdn.com/thumbor/6kLvmWfhU4h64EhC0S6tsn714fI=/0x0:4032x3024/1200x900/filters:focal(1694x1190:2338x1834)/cdn.vox-cdn.com/uploads/chorus_image/image/59740845/IMG_1503.42.jpg",
-        isFavorite = true,
-        mood = "Indulgent",
-        weather = "Cold",
-        sweetness = "High",
-        milkType = "Whole",
-        dietaryRestrictions = "Gluten-Free"
-    ),
-    CoffeeRecipe(
-        name = "Cinnamon Spiced Cold Brew",
-        ingredients = listOf(
-            Ingredient("Cold brew coffee", "60 mg"),
-            Ingredient("Cinnamon", "1 tsp"),
-            Ingredient("Oat milk", "1/2 cup"),
-            Ingredient("Honey", "1 tsp")
-        ),
-        instructions = listOf(
-            "Mix cold brew with milk and honey.",
-            "Add a sprinkle of cinnamon on top.",
-            "Stir and serve over ice."
-        ),
-        imageUrl = "https://cdn.vox-cdn.com/thumbor/6kLvmWfhU4h64EhC0S6tsn714fI=/0x0:4032x3024/1200x900/filters:focal(1694x1190:2338x1834)/cdn.vox-cdn.com/uploads/chorus_image/image/59740845/IMG_1503.42.jpg",
-        isFavorite = true,
-        mood = "Relaxed",
-        weather = "Breezy",
-        sweetness = "Low",
-        milkType = "Whole",
-        dietaryRestrictions = ""
-    )
-)
-
-
-
 @Composable
-fun FavoritesScreen() {
+fun FavoritesScreen(viewModel: RecipeViewModel = viewModel()) {
     var searchQuery by remember { mutableStateOf("") }
+    val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
 
-    val filteredRecipes = sampleFavoriteRecipes.filter { recipe ->
+    // Fetch favorite recipes when screen is first loaded
+    LaunchedEffect(Unit) {
+        viewModel.fetchFavoriteRecipes()
+    }
+
+    val filteredRecipes = favoriteRecipes.filter { recipe ->
         val query = searchQuery.trim().lowercase()
 
         query.isBlank() || recipe.name.lowercase().contains(query) ||
@@ -643,7 +499,7 @@ fun FavoritesScreen() {
                 .padding(bottom = 140.dp)
         ) {
             items(filteredRecipes) { recipe ->
-                RecipeCard(recipe)
+                RecipeCard(recipe, viewModel)
             }
         }
 
@@ -652,7 +508,7 @@ fun FavoritesScreen() {
 
 
 @Composable
-fun RecipeCard(recipe: CoffeeRecipe) {
+fun RecipeCard(recipe: CoffeeRecipe, recipeViewModel: RecipeViewModel) {
     var selectedRecipe by remember { mutableStateOf<CoffeeRecipe?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
 
@@ -710,11 +566,11 @@ fun RecipeCard(recipe: CoffeeRecipe) {
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            var isFavorite by remember { mutableStateOf(recipe.isFavorite) }
+            val isFavorite by remember { derivedStateOf {recipe.isFavorite} }
             IconButton(
                 onClick = {
-                    isFavorite = !isFavorite
-                    recipe.isFavorite = isFavorite
+                    recipe.isFavorite = !isFavorite
+                    recipeViewModel.removeRecipeFromFavorites(recipe)
                 },
                 modifier = Modifier.padding(top = 15.dp, end = 8.dp)
             ) {
@@ -730,9 +586,10 @@ fun RecipeCard(recipe: CoffeeRecipe) {
 
     if (showBottomSheet) {
         selectedRecipe?.let {
-            FavoriteRecipeModal(
+            GenerateRecipeModal (
                 coffeeRecipe = it,
                 showBottomSheet = showBottomSheet,
+                recipeViewModel = recipeViewModel,
                 onDismissRequest = { showBottomSheet = false }
             )
         }

@@ -10,6 +10,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.expressyou.ui.theme.ExpressYouTheme
 
 class MainActivity : ComponentActivity() {
@@ -45,7 +48,22 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ExpressYouTheme {
-                MainScreen(recipeViewModel, weatherViewModel)
+                // Use NavController for navigation
+                val navController = rememberNavController()
+
+                // Set up the navigation host
+                NavHost(navController = navController, startDestination = "login_screen") {
+                    composable("login_screen") {
+                        LoginScreen(navController = navController)
+                    }
+                    composable("signup_screen") {
+                        SignupScreen(navController = navController)
+                    }
+                    composable("mainapp_screen") {
+                        MainScreen(recipeViewModel, weatherViewModel)
+                    }
+                    // Add other composables for your app's screens here
+                }
             }
         }
     }

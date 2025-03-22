@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +52,7 @@ fun GenerateRecipeModal(
     modifier: Modifier = Modifier,
     coffeeRecipe: CoffeeRecipe,
     showBottomSheet: Boolean,
+    recipeViewModel: RecipeViewModel,
     onDismissRequest:  () -> Unit
 ) {
     //var showBottomSheet by remember { mutableStateOf(false) }
@@ -89,22 +92,26 @@ fun GenerateRecipeModal(
                 )
 
                 var isFavorite by remember { mutableStateOf(coffeeRecipe.isFavorite) }
+
                 IconButton(
                     onClick = {
                         isFavorite = !isFavorite
                         coffeeRecipe.isFavorite = isFavorite
+                        if (isFavorite) {
+                            recipeViewModel.saveRecipeToFavorites(coffeeRecipe)
+                        } else {
+                            recipeViewModel.removeRecipeFromFavorites(coffeeRecipe)
+                        }
                     },
                     modifier = Modifier
+                        .size(100.dp)
                         .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .background(color = Color.White)
-                        .clip(shape = RoundedCornerShape(40.dp))
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else
                             Icons.Outlined.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = Color(0xFFD4A373)
+                        tint = Color(0xFF4B2E2E)
                     )
                 }
             }
