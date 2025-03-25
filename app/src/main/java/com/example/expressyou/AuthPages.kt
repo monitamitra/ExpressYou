@@ -128,6 +128,7 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = vie
                         }
                     }
                 },
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4B2E2E))

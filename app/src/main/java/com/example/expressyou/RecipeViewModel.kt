@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +42,11 @@ class RecipeViewModel : ViewModel() {
             - Dietary Restrictions: $dietaryRestrictions
             - Weather: $weatherOverview
 
+            Consider a variety of coffee-based drinks, including traditional coffees (e.g., espresso, americano), 
+            flavored lattes, iced coffees, and international coffee variations (e.g., Vietnamese iced coffee, 
+            Turkish coffee, affogato, or coffee with fruits like a strawberry matcha latte). 
+            You can also suggest coffee infusions with spices or unique ingredients from 
+            different cultures (e.g., cinnamon, cardamom, coconut).
             Format the response in JSON with the following structure:
 
             {
@@ -148,6 +154,11 @@ class RecipeViewModel : ViewModel() {
             - Dietary Restrictions: $dietaryRestrictions
             - Weather: $weatherOverview
 
+            Consider a variety of coffee-based drinks, including traditional coffees (e.g., espresso, americano), 
+            flavored lattes, iced coffees, and international coffee variations (e.g., Vietnamese iced coffee, 
+            Turkish coffee, affogato, or coffee with fruits like a strawberry matcha latte). 
+            You can also suggest coffee infusions with spices or unique ingredients from 
+            different cultures (e.g., cinnamon, cardamom, coconut).
             Format the response in JSON with the following structure:
 
             {
@@ -168,6 +179,7 @@ class RecipeViewModel : ViewModel() {
               "milkType": "no milk, oat milk, almond milk, soy milk, whole milk, skim milk"
             }
 
+            Consider a variety of coffee-based drinks, including traditional coffees (e.g., espresso, americano), flavored lattes, iced coffees, and international coffee variations (e.g., Vietnamese iced coffee, Turkish coffee, affogato, or coffee with fruits like a strawberry matcha latte). You can also suggest coffee infusions with spices or unique ingredients from different cultures (e.g., cinnamon, cardamom, coconut).
             Ensure the response is concise, follows this JSON structure, and that the coffee recipe is unique and creative based on the given inputs.
         """.trimIndent()
 
@@ -269,8 +281,9 @@ class RecipeViewModel : ViewModel() {
     }
 
     fun fetchFavoriteRecipes() {
+        val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        db.collection("favorites")
+        db.collection("users").document(userID).collection("favorites")
             .addSnapshotListener { snapshots, e ->
                 if (e != null) {
                     Log.w("Favorites", "Error getting documents.", e)
@@ -284,7 +297,6 @@ class RecipeViewModel : ViewModel() {
 
                         val recipe = CoffeeRecipe(
                             name = recipeMap["name"] as String? ?: "",
-
                             ingredients = (recipeMap["ingredients"] as? List<*>)
                                 ?.filterIsInstance<Map<String, Any>>()
                                 ?.map {
@@ -293,10 +305,8 @@ class RecipeViewModel : ViewModel() {
                                         amount = it["amount"] as? String ?: ""
                                     )
                                 } ?: emptyList(),
-
                             instructions = (recipeMap["instructions"] as? List<*>)
                                 ?.filterIsInstance<String>() ?: emptyList(),
-
                             imageUrl = recipeMap["imageUrl"] as? String ?: "",
                             isFavorite = recipeMap["isFavorite"] as? Boolean ?: false,
                             mood = recipeMap["mood"] as? String ?: "",
@@ -313,6 +323,8 @@ class RecipeViewModel : ViewModel() {
     }
 
     fun saveRecipeToFavorites(recipe: CoffeeRecipe) {
+        val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
         val recipeMap = mapOf(
             "name" to recipe.name,
             "ingredients" to recipe.ingredients.map {
@@ -328,7 +340,7 @@ class RecipeViewModel : ViewModel() {
             "dietaryRestrictions" to recipe.dietaryRestrictions
         )
 
-        db.collection("favorites")
+        db.collection("users").document(userID).collection("favorites")
             .add(recipeMap)
             .addOnSuccessListener {
                 fetchFavoriteRecipes()
@@ -340,10 +352,14 @@ class RecipeViewModel : ViewModel() {
     }
 
     fun removeRecipeFromFavorites(recipe: CoffeeRecipe) {
-        db.collection("favorites").whereEqualTo("name", recipe.name)
+        val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("users").document(userID).collection("favorites")
+            .whereEqualTo("name", recipe.name)
             .get().addOnSuccessListener { docs ->
                 for (doc in docs) {
-                    db.collection("favorites").document(doc.id).delete()
+                    db.collection("users").document(userID)
+                        .collection("favorites").document(doc.id).delete()
                 }
                 fetchFavoriteRecipes()
             }
@@ -351,5 +367,4 @@ class RecipeViewModel : ViewModel() {
                 Log.e("Favorites", "Error removing favorite", e)
             }
     }
-
 }
