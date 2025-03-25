@@ -45,9 +45,11 @@ fun StartingScreenPreview() {
 
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var isLoading by remember{ mutableStateOf(false)}
 
     val poppinsMedium = FontFamily(
         Font(R.font.poppins_medium)
@@ -114,7 +116,18 @@ fun LoginScreen(navController: NavController) {
 
             // Login Button
             Button(
-                onClick = { navController.navigate("login_screen") },
+                onClick = {
+                    isLoading = true
+                    authViewModel.login(email, password) { success, errorMessage ->
+                        if (success) {
+                            isLoading = false
+                            navController.navigate("mainapp_screen")
+                        } else {
+                            isLoading = false
+                            AppUtil.showToast(context, errorMessage ?: "Something went wrong")
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4B2E2E))
@@ -145,7 +158,8 @@ fun LoginScreen(navController: NavController) {
 fun SignupScreen(navController: NavController, authViewModel: AuthViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var context = LocalContext.current
+    val context = LocalContext.current
+    var isLoading by remember{ mutableStateOf(false)}
 
     val poppinsMedium = FontFamily(
         Font(R.font.poppins_medium)
@@ -213,14 +227,18 @@ fun SignupScreen(navController: NavController, authViewModel: AuthViewModel = vi
             // Sign up Button
             Button(
                 onClick = {
+                    isLoading = true
                     authViewModel.signup(email, password) {success, errorMessage ->
                         if (success) {
+                            isLoading = false
                             navController.navigate("mainapp_screen")
                         } else {
+                            isLoading = false
                             AppUtil.showToast(context, errorMessage ?: "Something went wrong")
                         }
                     }
                 },
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4B2E2E))
