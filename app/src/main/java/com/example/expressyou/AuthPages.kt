@@ -133,7 +133,7 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = vie
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4B2E2E))
             ) {
-                Text(text = "Log In", color = Color.White, fontFamily = poppinsMedium,
+                Text(text = if (isLoading) "Logging In" else "Log In", color = Color.White, fontFamily = poppinsMedium,
                     fontSize = 20.sp)
             }
 
@@ -147,7 +147,7 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = vie
                     onClick = { navController.navigate("signup_screen") },
                     modifier = Modifier.padding(0.dp)
                    ) {
-                    Text(text = "Sign up now", color = Color.White, fontFamily = poppinsMedium)
+                    Text(text = if (isLoading) "Creating account" else "Sign Up", color = Color.White, fontFamily = poppinsMedium)
                 }
             }
         }

@@ -5,7 +5,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +35,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -47,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,14 +64,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -171,7 +170,7 @@ fun BottomNavBar(
 }
 
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreenUI(
     modifier: Modifier = Modifier,
@@ -182,10 +181,12 @@ fun HomeScreenUI(
         Font(R.font.poppins_regular),
     )
 
+
     val recipeResult = recipeViewModel.recipeResult.observeAsState()
     val weatherState by weatherViewModel.weatherOverview.observeAsState()
     var generatedRecipe: CoffeeRecipe? by remember { mutableStateOf(null) }
-    var showModal by remember { mutableStateOf(false) }
+    val showDialog by recipeViewModel.showDialog.observeAsState(false)
+    var isLoading by rememberSaveable { mutableStateOf(false) }
 
     val curWeatherSummary = when (weatherState) {
         is NetworkResponse.Success -> (weatherState as NetworkResponse.Success<String>).data
@@ -194,25 +195,17 @@ fun HomeScreenUI(
         else -> "Unknown Weather"
     }
 
-    val focusManager = LocalFocusManager.current
-
-    LaunchedEffect(showModal) {
-        if (!showModal) {
-            focusManager.clearFocus()
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 100.dp),
         verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
+
         var mood by rememberSaveable { mutableStateOf("") }
         var dietaryRestrictions by rememberSaveable { mutableStateOf("") }
         var selectedSweetness by rememberSaveable { mutableStateOf("") }
         var selectedMilkType by rememberSaveable { mutableStateOf("No Milk") }
-
 
         OutlinedTextField(
             value = mood,
@@ -340,12 +333,12 @@ fun HomeScreenUI(
         }
 
         Row(
-            modifier = modifier.padding(start = 12.dp, end = 15.dp, top = 22.dp),
-            horizontalArrangement = Arrangement.spacedBy(15.dp)
+            modifier = modifier.align(Alignment.CenterHorizontally)
+                .padding(start = 12.dp, end = 15.dp, top = 22.dp),
         ) {
+
             Button(
                 onClick = {
-                    showModal = true
                     recipeViewModel.generateCoffeeRecipe(mood = mood, sweetness = selectedSweetness,
                         milkType = selectedMilkType, dietaryRestrictions = dietaryRestrictions,
                         weatherOverview = curWeatherSummary)
@@ -359,75 +352,50 @@ fun HomeScreenUI(
             ) {
                 Text("Generate My Coffee!", fontFamily = poppins, fontSize = 14.sp)
             }
-
-            OutlinedButton(
-                onClick = {
-                    showModal = true
-                    recipeViewModel.generateSurpriseCoffeeRecipe(dietaryRestrictions = dietaryRestrictions,
-                        weatherOverview = curWeatherSummary)
-                },
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFD4A373),
-                    containerColor = Color.White
-                ),
-                border = BorderStroke(2.dp, Color.White),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Surprise Me!", fontFamily = poppins, fontSize = 14.sp)
-            }
-
         }
     }
 
-    when(val res = recipeResult.value) {
-        is NetworkResponse.Error -> {
-            Text(text = res.message)
-        }
-        NetworkResponse.Loading -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Gray.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(80.dp),
-                    color = Color(0xFF4B2E2E),
-                    strokeWidth = 10.dp
-                )
+
+    LaunchedEffect(recipeResult.value) {
+        when (val res = recipeResult.value) {
+            is NetworkResponse.Success -> {
+                generatedRecipe = res.data
+                isLoading = false
+                recipeViewModel.updateShowDialogState(true)
             }
+            is NetworkResponse.Loading -> {
+                isLoading = true
+            }
+            is NetworkResponse.Error -> {
+                isLoading = false
+                recipeViewModel.updateShowDialogState(false)
+                Log.d("HomeScreen", "Error generating recipe")
+            }
+            else -> {}
         }
-        is NetworkResponse.Success -> {
-            generatedRecipe = res.data
-            showModal = true
-            Log.d("HomeScreen", "Coffee recipe: ${res.data.name}")
-        }
-        null -> {}
     }
 
-    if (showModal && generatedRecipe != null) {
+    if (showDialog && generatedRecipe != null) {
+        GenerateRecipePopup(
+            coffeeRecipe = generatedRecipe!!,
+            showDialog = showDialog,
+            recipeViewModel = recipeViewModel,
+            onDismissRequest = { recipeViewModel.updateShowDialogState(false) }
+        )
+    } else if (isLoading) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .zIndex(1f)
+                .background(Color.Gray.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
         ) {
-            GenerateRecipeModal(
-                coffeeRecipe = generatedRecipe!!,
-                showBottomSheet = showModal,
-                recipeViewModel = recipeViewModel,
-                onDismissRequest = { showModal = false }
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(16.dp))
-                    .clickable(onClick = { showModal = false })
-                    .zIndex(1f)
+            CircularProgressIndicator(
+                modifier = Modifier.size(80.dp),
+                color = Color(0xFF4B2E2E),
+                strokeWidth = 10.dp
             )
         }
     }
-
 }
 
 
@@ -435,6 +403,7 @@ fun HomeScreenUI(
 fun FavoritesScreen(viewModel: RecipeViewModel = viewModel()) {
     var searchQuery by remember { mutableStateOf("") }
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
+
 
     // Fetch favorite recipes when screen is first loaded
     LaunchedEffect(Unit) {
@@ -507,10 +476,12 @@ fun FavoritesScreen(viewModel: RecipeViewModel = viewModel()) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeCard(recipe: CoffeeRecipe, recipeViewModel: RecipeViewModel) {
     var selectedRecipe by remember { mutableStateOf<CoffeeRecipe?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
 
     val poppinsRegular = FontFamily(
         Font(R.font.poppins_regular),
@@ -586,9 +557,9 @@ fun RecipeCard(recipe: CoffeeRecipe, recipeViewModel: RecipeViewModel) {
 
     if (showBottomSheet) {
         selectedRecipe?.let {
-            GenerateRecipeModal (
+            GenerateRecipePopup (
                 coffeeRecipe = it,
-                showBottomSheet = showBottomSheet,
+                showDialog = showBottomSheet,
                 recipeViewModel = recipeViewModel,
                 onDismissRequest = { showBottomSheet = false }
             )
