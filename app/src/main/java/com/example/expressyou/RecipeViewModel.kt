@@ -1,13 +1,10 @@
 package com.example.expressyou
 
-import android.net.Network
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.common.internal.ImagesContract.URL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -130,11 +127,8 @@ class RecipeViewModel : ViewModel() {
         milkType: String
     ): CoffeeRecipe {
 
-        Log.i("parseRecipeResults: ", "HERE :|")
-
         // ingredients
         val ingredientsArray = coffeeRecipeJSON.getJSONArray("ingredients")
-        Log.i("parseRecipeResults: ", ingredientsArray.join(", "))
         val ingredients = mutableListOf<Ingredient>()
         for (i in 0 until ingredientsArray.length()) {
             val item = ingredientsArray.getJSONObject(i)
@@ -173,10 +167,8 @@ class RecipeViewModel : ViewModel() {
             if (response.isSuccessful) {
                 val imageUrl = response.body()?.data?.get(0)?.url ?: ""
                 val firebaseImageUrl = uploadImageToFirebase(imageUrl)
-                Log.i("AI Image", "Generated Image URL: $imageUrl")
                 firebaseImageUrl
             } else {
-                Log.i("AI Image", "FAILED TO GENERATE IMAGE :(")
                 ""
             }
 

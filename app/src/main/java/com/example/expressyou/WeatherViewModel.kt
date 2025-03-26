@@ -36,7 +36,6 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             .addOnSuccessListener { location ->
                 if (location != null) {
                     getWeatherOverview(location.latitude, location.longitude)
-                   // Log.i("FETCH WEATHER DATA: ", "RETREIVED LOCATION NOT NULL")
                 } else {
                     _weatherOverview.value = NetworkResponse.Error("Location not available")
                 }
@@ -58,17 +57,13 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                     latitude = latitude,
                     apiKey = BuildConfig.WEATHER_API_KEY
                 )
-                Log.i("WEATHER RESPONSE", "Response code: ${weatherResponse.code()}")
-                Log.i("WEATHER RESPONSE", "Response body: ${weatherResponse.body()}")
 
                 if (weatherResponse.isSuccessful) {
                     val body = weatherResponse.body()
                     if (body != null) {
                         val overview = body.weather_overview
-                        Log.i("WEATHER DATA: ", latitude.toString())
                         _weatherOverview.value = NetworkResponse.Success(overview)
                     } else {
-                        Log.e("WEATHER ERROR", "Weather response body is null")
                         _weatherOverview.value = NetworkResponse.Error("Weather overview returned NONE :(")
                     }
                 }

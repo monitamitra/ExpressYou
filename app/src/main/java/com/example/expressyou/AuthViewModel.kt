@@ -25,7 +25,7 @@ class AuthViewModel : ViewModel() {
             .addOnCompleteListener {
                 if (it.isSuccessful) {
                     val userID = it.result?.user?.uid
-                    val user = User(email, userID!!, listOf<Map<String, Any>>())
+                    val user = User(email, userID!!)
                     firestore.collection("users").document(userID)
                         .set(user)
                         .addOnCompleteListener { dbTask ->

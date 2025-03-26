@@ -31,7 +31,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.i("MAIN ACTIVITY: ", "onCreate called")
 
         recipeViewModel = ViewModelProvider(this)[RecipeViewModel::class.java]
         weatherViewModel = ViewModelProvider(this,
@@ -40,7 +39,6 @@ class MainActivity : ComponentActivity() {
         // Check if permission is granted; otherwise, request it
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED) {
-            Log.i("MAIN ACTIVITY: ", "FETCHING WEATHER DATA....")
             weatherViewModel.fetchWeatherData()
         } else {
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -48,7 +46,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ExpressYouTheme {
-                // Use NavController for navigation
                 val navController = rememberNavController()
 
                 // Set up the navigation host
@@ -62,7 +59,6 @@ class MainActivity : ComponentActivity() {
                     composable("mainapp_screen") {
                         MainScreen(recipeViewModel, weatherViewModel)
                     }
-                    // Add other composables for your app's screens here
                 }
             }
         }

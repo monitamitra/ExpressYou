@@ -9,7 +9,7 @@ import retrofit2.http.POST
 data class RecipeRequest(
     val model: String = "gpt-3.5-turbo",
     val messages: List<Message>,
-    val temperature: Double = 0.7
+    val temperature: Double = 0.9
 )
 
 data class Message(
