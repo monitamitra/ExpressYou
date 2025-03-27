@@ -7,8 +7,9 @@ It offers users a fun and unique coffee experience every day by providing tailor
 - Leveraged DALL·E API to create dynamic, AI-generated images for each coffee recipe
 - Utilized Firebase for secure user authentication and real-time storage of favorite recipes, allowing users to save and retrieve their preferred coffee concoctions
 - Built a modern, responsive UI using Jetpack Compose, offering a smooth and intuitive experience for users with easy navigation and a modal view for recipe generation
-- Search Functionality: Added search functionality to allow users to quickly find and view their favorite recipes based on mood, sweetness, and dietary restrictions
+- Added search functionality to allow users to quickly find and view their favorite recipes based on mood, sweetness, and dietary restrictions
 - Implemented ViewModel for efficient data management and smooth API integration across the app
+- Designed a prototype of the app and user interface using Figma to ensure a visually appealing and user-friendly experience
 
 
 #### App Demo
