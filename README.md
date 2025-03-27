@@ -11,13 +11,24 @@ It offers users a fun and unique coffee experience every day by providing tailor
 - Implemented ViewModel for efficient data management and smooth API integration across the app
 
 
-
+#### App Demo
 https://github.com/user-attachments/assets/5070bd5a-c82d-423d-a23d-e58ccaca08a2
 
 
-![Login_Page](https://github.com/user-attachments/assets/fec9fb58-3b37-4f1f-80fc-5b38c4025a9e)
-![SignUp_Page](https://github.com/user-attachments/assets/6f1cc585-eb1b-48cf-a5d5-18139e1b38d2)
-![Home_Page](https://github.com/user-attachments/assets/19b38887-cb97-48d8-aaa4-c1e45350c1c7)
-![Recipe_Dialog](https://github.com/user-attachments/assets/4a2fe082-853b-4526-a4ad-828710504650)
-![Favorites_Page](https://github.com/user-attachments/assets/434d6304-d9a9-4a59-87ce-9537bc77ce50)
-![Favorites_Search](https://github.com/user-attachments/assets/b6b89be8-34fa-46c1-9f1b-870baa1874a5)
+#### Login Page
+<img src="https://github.com/user-attachments/assets/fec9fb58-3b37-4f1f-80fc-5b38c4025a9e" width="400" />
+
+#### SignUp Page
+<img src="https://github.com/user-attachments/assets/6f1cc585-eb1b-48cf-a5d5-18139e1b38d2" width="400" />
+
+#### Home Page
+<img src="https://github.com/user-attachments/assets/19b38887-cb97-48d8-aaa4-c1e45350c1c7" width="400" />
+
+#### Recipe Dialog
+<img src="https://github.com/user-attachments/assets/4a2fe082-853b-4526-a4ad-828710504650" width="400" />
+
+#### Favorites Page
+<img src="https://github.com/user-attachments/assets/434d6304-d9a9-4a59-87ce-9537bc77ce50" width="400" />
+
+#### Favorites Search
+<img src="https://github.com/user-attachments/assets/b6b89be8-34fa-46c1-9f1b-870baa1874a5" width="400" />
