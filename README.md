@@ -11,6 +11,7 @@ It offers users a fun and unique coffee experience every day by providing tailor
 - Implemented ViewModel for efficient data management and smooth API integration across the app
 - Designed a prototype of the app and user interface using Figma to ensure a visually appealing and user-friendly experience
 
+**Figma Prototype:** https://www.figma.com/proto/asATbZRq8UFcQRmv9zjZSU/ExpressYou?node-id=7-4&p=f&t=Jpv7DFPu0694mpFI-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=7%3A4
 
 #### App Demo
 https://github.com/user-attachments/assets/5070bd5a-c82d-423d-a23d-e58ccaca08a2
