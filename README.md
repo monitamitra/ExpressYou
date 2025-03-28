@@ -2,14 +2,14 @@
 **ExpressYou is an Android app that generates personalized coffee recipes based on user preferences, mood, and real-time weather conditions, powered by advanced AI technologies. 
 It offers users a fun and unique coffee experience every day by providing tailored coffee recipes that match users' mood, preferences, and environment.**
 
-- Developed using Kotlin for Android, ExpressYou creates coffee recipes based on user mood, preferences, and current weather
-- Integrated OpenAI API for generating customized coffee recipes and OpenWeather API for weather-based recipe recommendations
-- Leveraged DALL·E API to create dynamic, AI-generated images for each coffee recipe
-- Utilized Firebase for secure user authentication and real-time storage of favorite recipes, allowing users to save and retrieve their preferred coffee concoctions
-- Built a modern, responsive UI using Jetpack Compose, offering a smooth and intuitive experience for users with easy navigation and a modal view for recipe generation
-- Added search functionality to allow users to quickly find and view their favorite recipes based on mood, sweetness, and dietary restrictions
-- Implemented ViewModel for efficient data management and smooth API integration across the app
-- Designed a prototype of the app and user interface using Figma to ensure a visually appealing and user-friendly experience
+- Developed a Kotlin Android app that generates personalized coffee recipes based on user preferences, mood, and real-time weather conditions.
+- Integrated OpenAI API for custom coffee recipe generation and OpenWeather API for weather-based recommendations. Overcame prompt engineering challenges to ensure the OpenAI API delivers output in a format easily convertible into a recipe object.
+- Leveraged DALL·E API to create dynamic, AI-generated images for each coffee recipe.
+- Utilized Firebase for secure user authentication and real-time storage of favorite recipes. Overcame challenges with image expiration by learning to store images in Firebase Storage.
+- Built a modern, responsive UI with Jetpack Compose, featuring intuitive navigation and a modal view for recipe generation (using Dialog).
+- Implemented search functionality to help users quickly find their favorite recipes based on mood, sweetness, and dietary restrictions.
+- Applied ViewModel architecture for efficient data management and seamless API integration, addressing challenges with error and success states in API calls.
+- Designed a prototype and UI using Figma to ensure a visually appealing and user-friendly experience.
 
 **Figma Prototype:** https://www.figma.com/proto/asATbZRq8UFcQRmv9zjZSU/ExpressYou?node-id=7-4&p=f&t=Jpv7DFPu0694mpFI-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=7%3A4
 
