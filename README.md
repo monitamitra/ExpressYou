@@ -1,6 +1,6 @@
 # ExpressYou: Generate Coffee, Your Way. Every Day.
-**ExpressYou is an Android app that generates personalized coffee recipes based on user preferences, mood, and real-time weather conditions, powered by advanced AI technologies. 
-It offers users a fun and unique coffee experience every day by providing tailored coffee recipes that match users' mood, preferences, and environment.**
+**ExpressYou is an Android app powered by advanced AI technologies that generates personalized coffee recipes based on user preferences, mood, and real-time weather conditions. 
+It offers users a fun and unique coffee experience every day by providing tailored coffee recipes that match users' moods, preferences, and environment.**
 
 - Developed a Kotlin Android app that generates personalized coffee recipes based on user preferences, mood, and real-time weather conditions.
 - Integrated OpenAI API for custom coffee recipe generation and OpenWeather API for weather-based recommendations. Overcame prompt engineering challenges to ensure the OpenAI API delivers output in a format easily convertible into a recipe object.
@@ -14,8 +14,7 @@ It offers users a fun and unique coffee experience every day by providing tailor
 **Figma Prototype:** https://www.figma.com/proto/asATbZRq8UFcQRmv9zjZSU/ExpressYou?node-id=7-4&p=f&t=Jpv7DFPu0694mpFI-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=7%3A4
 
 #### App Demo
-https://github.com/user-attachments/assets/5070bd5a-c82d-423d-a23d-e58ccaca08a2
-
+https://github.com/user-attachments/assets/bc122877-b6f2-4828-8ffd-029a62ffa9e1
 
 #### Login Page
 <img src="https://github.com/user-attachments/assets/fec9fb58-3b37-4f1f-80fc-5b38c4025a9e" width="400" />
